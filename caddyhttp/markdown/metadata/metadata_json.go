@@ -17,6 +17,7 @@ package metadata
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 )
 
 // JSONParser is the MetadataParser for JSON
@@ -34,6 +35,7 @@ func (j *JSONParser) Type() string {
 func (j *JSONParser) Init(b *bytes.Buffer) bool {
 	m := make(map[string]interface{})
 
+	before := b.String()
 	err := json.Unmarshal(b.Bytes(), &m)
 	if err != nil {
 		var offset int
@@ -52,9 +54,16 @@ func (j *JSONParser) Init(b *bytes.Buffer) bool {
 		}
 	}
 
-	j.metadata = NewMetadata(m)
-	j.markdown = bytes.NewBuffer(b.Bytes())
+	after := b.String()
+	if before == after {
+		fmt.Println("they're the same!")
+		j.markdown = bytes.NewBuffer([]byte{})
+	} else {
+		j.markdown = bytes.NewBuffer(b.Bytes())
+	}
 
+	j.metadata = NewMetadata(m)
+	fmt.Println(j.markdown)
 	return true
 }
 
