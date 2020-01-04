@@ -40,6 +40,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -65,6 +66,9 @@ func emit(final bool) error {
 	if !enabled {
 		return fmt.Errorf("telemetry not enabled")
 	}
+
+	// some metrics are updated/set at time of emission
+	setEmitTimeMetrics()
 
 	// ensure only one update happens at a time;
 	// skip update if previous one still in progress
@@ -205,7 +209,7 @@ func emit(final bool) error {
 
 	// ensure we won't slam the telemetry server; add a little variance
 	if reply.NextUpdate < 1*time.Second {
-		reply.NextUpdate = defaultUpdateInterval + time.Duration(rand.Intn(int(1*time.Minute)))
+		reply.NextUpdate = defaultUpdateInterval + time.Duration(rand.Int63n(int64(1*time.Minute)))
 	}
 
 	// schedule the next update (if this wasn't the last one and
@@ -226,6 +230,17 @@ func stopUpdateTimer() {
 	updateTimer.Stop()
 	updateTimer = nil
 	updateTimerMu.Unlock()
+}
+
+// setEmitTimeMetrics sets some metrics that should
+// be recorded just before emitting.
+func setEmitTimeMetrics() {
+	Set("goroutines", runtime.NumGoroutine())
+
+	var mem runtime.MemStats
+	runtime.ReadMemStats(&mem)
+	SetNested("memory", "heap_alloc", mem.HeapAlloc)
+	SetNested("memory", "sys", mem.Sys)
 }
 
 // makePayloadAndResetBuffer prepares a payload
@@ -376,7 +391,7 @@ var (
 	// If the value is true, it may be removed if
 	// the metric is re-enabled remotely later. If
 	// the value is false, it is permanent
-	// (presumably becaues the user explicitly
+	// (presumably because the user explicitly
 	// disabled it) and can only be re-enabled
 	// with user consent.
 	disabledMetrics   = make(map[string]bool)
@@ -400,7 +415,7 @@ var (
 const (
 	// endpoint is the base URL to remote telemetry server;
 	// the instance ID will be appended to it.
-	endpoint = "https://telemetry-staging.caddyserver.com/v1/update/"
+	endpoint = "https://telemetry.caddyserver.com/v1/update/"
 
 	// defaultUpdateInterval is how long to wait before emitting
 	// more telemetry data if all retires fail. This value is

@@ -25,8 +25,13 @@ import (
 	"testing"
 	"text/template"
 
+<<<<<<< HEAD
 	"github.com/mholt/caddy"
 	"github.com/mholt/caddy/caddyhttp/staticfiles"
+=======
+	"github.com/caddyserver/caddy"
+	"github.com/caddyserver/caddy/caddyhttp/httpserver"
+>>>>>>> 4b68de84181938381f604064336b0342e389c551
 	"github.com/russross/blackfriday"
 )
 

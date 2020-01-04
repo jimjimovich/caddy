@@ -23,9 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mholt/caddy"
-	"github.com/mholt/caddy/caddyhttp/httpserver"
+	"github.com/caddyserver/caddy"
+	"github.com/caddyserver/caddy/caddyhttp/httpserver"
 )
+
+var defaultTimeout = 60 * time.Second
 
 func init() {
 	caddy.RegisterPlugin("fastcgi", caddy.Plugin{
@@ -76,8 +78,11 @@ func fastcgiParse(c *caddy.Controller) ([]Rule, error) {
 		}
 
 		rule := Rule{
-			Root: absRoot,
-			Path: args[0],
+			Root:           absRoot,
+			Path:           args[0],
+			ConnectTimeout: defaultTimeout,
+			ReadTimeout:    defaultTimeout,
+			SendTimeout:    defaultTimeout,
 		}
 
 		upstreams := []string{args[1]}

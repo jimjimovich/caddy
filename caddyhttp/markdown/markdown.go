@@ -17,8 +17,12 @@
 package markdown
 
 import (
+<<<<<<< HEAD
 	"bytes"
 	"mime"
+=======
+	"log"
+>>>>>>> 4b68de84181938381f604064336b0342e389c551
 	"net/http"
 	"os"
 	"path"
@@ -27,7 +31,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/mholt/caddy/caddyhttp/httpserver"
+	"github.com/caddyserver/caddy/caddyhttp/httpserver"
 	"github.com/russross/blackfriday"
 )
 
@@ -133,10 +137,23 @@ func (md Markdown) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error
 	// prepare a buffer to hold the response, if applicable
 	rb := httpserver.NewResponseBuffer(buf, w, shouldBuf)
 
+<<<<<<< HEAD
 	// pass request up the chain to let another middleware provide us markdown
 	code, err := md.Next.ServeHTTP(rb, r)
 	if !rb.Buffered() || err != nil {
 		return code, err
+=======
+	// At this point we have a supported extension/markdown
+	f, err := md.FileSys.Open(fpath)
+	switch {
+	case err == nil: // nop
+	case os.IsPermission(err):
+		return http.StatusForbidden, err
+	case os.IsNotExist(err):
+		return http.StatusNotFound, nil
+	default: // did we run out of FD?
+		return http.StatusInternalServerError, err
+>>>>>>> 4b68de84181938381f604064336b0342e389c551
 	}
 
 	// At this point we have a supported extension or content type for markdown
@@ -151,9 +168,19 @@ func (md Markdown) ServeHTTP(w http.ResponseWriter, r *http.Request) (int, error
 		return http.StatusInternalServerError, err
 	}
 
+<<<<<<< HEAD
 	// reset to original HTTP method if we changed it
 	if r.Method != originalMethod {
 		r.Method = originalMethod
+=======
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Content-Length", strconv.Itoa(len(html)))
+	httpserver.SetLastModifiedHeader(w, lastModTime)
+	if r.Method == http.MethodGet {
+		if _, err := w.Write(html); err != nil {
+			log.Println("[ERROR] failed to write html response: ", err)
+		}
+>>>>>>> 4b68de84181938381f604064336b0342e389c551
 	}
 
 	// copy the buffered header into the real ResponseWriter

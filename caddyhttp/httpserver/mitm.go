@@ -25,8 +25,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/mholt/caddy/caddytls"
-	"github.com/mholt/caddy/telemetry"
+	"github.com/caddyserver/caddy/caddytls"
+	"github.com/caddyserver/caddy/telemetry"
 )
 
 // tlsHandler is a http.Handler that will inject a value
@@ -65,14 +65,16 @@ func (h *tlsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.listener.helloInfosMu.RUnlock()
 
 	ua := r.Header.Get("User-Agent")
+	uaHash := telemetry.FastHash([]byte(ua))
 
 	// report this request's UA in connection with this ClientHello
-	go telemetry.AppendUnique("tls_client_hello_ua:"+caddytls.ClientHelloInfo(info).Key(), ua)
+	go telemetry.AppendUnique("tls_client_hello_ua:"+caddytls.ClientHelloInfo(info).Key(), uaHash)
 
 	var checked, mitm bool
 	if r.Header.Get("X-BlueCoat-Via") != "" || // Blue Coat (masks User-Agent header to generic values)
 		r.Header.Get("X-FCCKV2") != "" || // Fortinet
 		info.advertisesHeartbeatSupport() { // no major browsers have ever implemented Heartbeat
+		// TODO: Move the heartbeat check into each "looksLike" function...
 		checked = true
 		mitm = true
 	} else if strings.Contains(ua, "Edge") || strings.Contains(ua, "MSIE") ||

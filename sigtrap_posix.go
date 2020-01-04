@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// +build !windows,!plan9,!nacl
+// +build !windows,!plan9,!nacl,!js
 
 package caddy
 
@@ -22,7 +22,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/mholt/caddy/telemetry"
+	"github.com/caddyserver/caddy/telemetry"
 )
 
 // trapSignalsPosix captures POSIX-only signals.
@@ -90,6 +90,7 @@ func trapSignalsPosix() {
 				purgeEventHooks()
 
 				// Kick off the restart; our work is done
+				EmitEvent(InstanceRestartEvent, nil)
 				_, err = inst.Restart(caddyfileToUse)
 				if err != nil {
 					restoreEventHooks(oldEventHooks)
